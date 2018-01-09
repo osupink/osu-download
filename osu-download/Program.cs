@@ -8,11 +8,19 @@ namespace osu_download
 {
     class Program
     {
+        static string GetFileHash(string FilePath)
+        {
+            MD5CryptoServiceProvider hc = new MD5CryptoServiceProvider();
+            FileStream fs = new FileStream(FilePath, FileMode.Open);
+            string FileHash = BitConverter.ToString(hc.ComputeHash(fs)).Replace("-", "").ToLower();
+            fs.Close();
+            return FileHash;
+        }
         static void Main(string[] args)
         {
             string Author = "asd";
             string ProgramTitle = "osu! 镜像下载客户端";
-            string CurDLClientVer = "b20180108.2";
+            string CurDLClientVer = "b20180109.1";
             string InstallPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\osu!";
             Console.Title = ProgramTitle;
             Console.WriteLine(string.Format("欢迎使用由 {0} 提供的 {1}！", Author, ProgramTitle));
@@ -71,11 +79,7 @@ namespace osu_download
                         string filepath = InstallPath + @"\" + filearr[1];
                         if (File.Exists(filepath))
                         {
-                            MD5CryptoServiceProvider hc = new MD5CryptoServiceProvider();
-                            FileStream fs = new FileStream(filepath, FileMode.Open);
-                            string filehash = BitConverter.ToString(hc.ComputeHash(fs)).Replace("-","").ToLower();
-                            fs.Close();
-                            if (filehash == filearr[0].ToLower())
+                            if (GetFileHash(filepath) == filearr[0].ToLower())
                             {
                                 Console.WriteLine(string.Format("文件已存在且为最新版：{0}", filearr[1]));
                                 continue;
@@ -87,7 +91,15 @@ namespace osu_download
                         Console.WriteLine(string.Format("正在" + isUpdate + "：{0}...", filearr[1]));
                         WebClient wc = new WebClient();
                         wc.DownloadFile(mirror + uri, filepath);
-                        Console.WriteLine(string.Format(isUpdate + "完成：{0}", filearr[1]));
+                        if (filearr[0].ToLower() != GetFileHash(filepath))
+                        {
+                            File.Delete(filepath);
+                            Console.WriteLine(string.Format(isUpdate + "失败，文件不一致：{0}", filearr[1]));
+                        }
+                        else
+                        {
+                            Console.WriteLine(string.Format(isUpdate + "完成：{0}", filearr[1]));
+                        }
                     }
                 }
                 Console.WriteLine("全部文件已下载/更新完成！");
