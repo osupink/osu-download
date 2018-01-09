@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace osu_download
@@ -66,21 +67,30 @@ namespace osu_download
                             Console.WriteLine("已创建安装目录。");
                             Directory.CreateDirectory(InstallPath);
                         }
+                        string isUpdate = "下载";
                         string filepath = InstallPath + @"\" + filearr[1];
                         if (File.Exists(filepath))
                         {
-                            Console.WriteLine(string.Format("文件已存在：{0}", filearr[1]));
+                            MD5CryptoServiceProvider hc = new MD5CryptoServiceProvider();
+                            FileStream fs = new FileStream(filepath, FileMode.Open);
+                            string filehash = BitConverter.ToString(hc.ComputeHash(fs)).Replace("-","").ToLower();
+                            fs.Close();
+                            if (filehash == filearr[0].ToLower())
+                            {
+                                Console.WriteLine(string.Format("文件已存在且为最新版：{0}", filearr[1]));
+                                continue;
+                            }
+                            isUpdate = "更新";
+                            File.Delete(filepath);
                         }
-                        else
-                        {
-                            Console.WriteLine(string.Format("正在下载：{0}...", filearr[1]));
-                            WebClient wc = new WebClient();
-                            wc.DownloadFile(mirror + uri, filepath);
-                            Console.WriteLine(string.Format("下载完成：{0}", filearr[1]));
-                        }
+
+                        Console.WriteLine(string.Format("正在" + isUpdate + "：{0}...", filearr[1]));
+                        WebClient wc = new WebClient();
+                        wc.DownloadFile(mirror + uri, filepath);
+                        Console.WriteLine(string.Format(isUpdate + "完成：{0}", filearr[1]));
                     }
                 }
-                Console.WriteLine("全部文件已下载完成！");
+                Console.WriteLine("全部文件已下载/更新完成！");
             } catch (Exception e)
             {
                 Console.WriteLine("下载失败！" + e.Message);
