@@ -3,6 +3,7 @@ using System.IO;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
+using System.Windows.Forms;
 
 namespace osu_download
 {
@@ -16,20 +17,27 @@ namespace osu_download
             fs.Close();
             return FileHash;
         }
+        static string DialogDirPath()
+        {
+            FolderBrowserDialog dialog = new FolderBrowserDialog();
+            dialog.ShowDialog();
+            return dialog.SelectedPath;
+        }
+        [STAThread]
         static void Main(string[] args)
         {
             string Author = "asd";
             string ProgramTitle = "osu! 镜像下载客户端";
-            string CurDLClientVer = "b20180109.1";
+            string CurDLClientVer = "b20180109.2";
             string InstallPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\osu!";
             Console.Title = ProgramTitle;
             Console.WriteLine(string.Format("欢迎使用由 {0} 提供的 {1}！", Author, ProgramTitle));
             Console.WriteLine("[广告/反馈] QQ群：132783429");
             Console.WriteLine(string.Format("当前下载客户端版本为：{0}，绿色版客户端默认会安装到 {1}。", CurDLClientVer, InstallPath));
-            recheck:
             Console.WriteLine("输入数字然后按下回车(Enter)以选择分支：");
-            Console.WriteLine("0 [Latest(最新版)]，1 [Fallback(回退版)]，2 [Beta(测试版)]，3 [CuttingEdge(前沿版)]");
+            Console.WriteLine("0 [Latest(最新版)]，1 [Fallback(回退版)]，2 [Beta(测试版)]，3 [CuttingEdge(前沿版)]，4 [选择路径]");
             byte ver;
+            recheck:
             while (byte.TryParse(Console.ReadKey(true).KeyChar.ToString(), out ver) != true)
             {
                 Console.WriteLine("输入数字然后按下回车(Enter)以选择分支：");
@@ -37,6 +45,15 @@ namespace osu_download
             }
             if (ver > 3)
             {
+                if (ver == 4)
+                {
+                    string SelectedDirPath = DialogDirPath().TrimEnd('\\');
+                    if (!string.IsNullOrEmpty(SelectedDirPath))
+                    {
+                        InstallPath = SelectedDirPath;
+                        Console.WriteLine(string.Format("新的安装路径为：{0}", InstallPath));
+                    }
+                }
                 goto recheck;
             }
             try
