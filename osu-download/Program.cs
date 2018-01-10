@@ -33,11 +33,11 @@ namespace osu_download
             {
                 if (pingreply.RoundtripTime > 32767)
                 {
-                    return -1;
+                    return 2000;
                 }
                 return (short)pingreply.RoundtripTime;
             }
-            return -1;
+            return 2000;
         }
         [STAThread]
         static void Main(string[] args)
