@@ -44,7 +44,7 @@ namespace osu_download
         {
             string Author = "asd";
             string ProgramTitle = "osu! 镜像下载客户端";
-            string CurDLClientVer = "b20180110.1";
+            string CurDLClientVer = "b20180110.2";
             string InstallPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\osu!";
             Console.Title = ProgramTitle;
             Console.WriteLine(string.Format("欢迎使用由 {0} 提供的 {1}！", Author, ProgramTitle));
@@ -202,7 +202,8 @@ namespace osu_download
                         }
                     }
                 }
-                Console.WriteLine("全部文件已下载/更新完成！");
+                Console.WriteLine("全部文件已下载/更新完成，将自动打开安装路径！");
+                System.Diagnostics.Process.Start(InstallPath);
             }
             catch (Exception e)
             {
