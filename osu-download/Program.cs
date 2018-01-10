@@ -44,7 +44,7 @@ namespace osu_download
         {
             string Author = "asd";
             string ProgramTitle = "osu! 镜像下载客户端";
-            string CurDLClientVer = "b20180109.2";
+            string CurDLClientVer = "b20180110.1";
             string InstallPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\osu!";
             Console.Title = ProgramTitle;
             Console.WriteLine(string.Format("欢迎使用由 {0} 提供的 {1}！", Author, ProgramTitle));
@@ -89,7 +89,8 @@ namespace osu_download
                     if (tmp.StartsWith("OfficialMirror:"))
                     {
                         OfficialMirror = tmp.Replace("OfficialMirror:", "");
-                    } else if (tmp.StartsWith("Mirror:"))
+                    }
+                    else if (tmp.StartsWith("Mirror:"))
                     {
                         string[] MirrorSplit = tmp.Replace("Mirror:", "").Split('|');
                         MirrorDictionary.Add(Ping(new Uri(MirrorSplit[0]).Host), MirrorSplit);
@@ -103,7 +104,7 @@ namespace osu_download
                     OfficialMirrorURL = OfficialMirrorSplit[0];
                     string OfficialMirrorName = OfficialMirrorSplit[1];
                     short OfficialPingDelay = Ping(new Uri(OfficialMirrorURL).Host);
-                    string OfficialMirrorTitle = string.Format("{0}.{1} (延迟：{2})", count++, OfficialMirrorName, OfficialPingDelay);
+                    string OfficialMirrorTitle = string.Format("{0}.{1} (延迟：{2}ms)", count++, OfficialMirrorName, OfficialPingDelay);
                     if (OfficialMirrorSplit.Length > 2)
                     {
                         OfficialMirrorTitle += string.Format(" [{0}]", OfficialMirrorSplit[2]);
@@ -113,7 +114,7 @@ namespace osu_download
                 List<string> MirrorList = new List<string>();
                 foreach (var tmp in MirrorDictionary)
                 {
-                    string MirrorTitle = string.Format("{0} (延迟：{1})", tmp.Value[1], tmp.Key);
+                    string MirrorTitle = string.Format("{0} (延迟：{1}ms)", tmp.Value[1], tmp.Key);
                     if (tmp.Value.Length > 2)
                     {
                         MirrorTitle += string.Format(" [{0}]", tmp.Value[2]);
@@ -137,10 +138,15 @@ namespace osu_download
                 if (OfficialMirrorURL != null && SelectedMirror == 1)
                 {
                     CurMirror = OfficialMirrorURL;
-                } else
+                }
+                else
                 {
-                    SelectedMirror -= 2;
-                    CurMirror = MirrorList[SelectedMirror] ;
+                    SelectedMirror--;
+                    if (OfficialMirrorURL != null)
+                    {
+                        SelectedMirror--;
+                    }
+                    CurMirror = MirrorList[SelectedMirror];
                 }
                 Console.WriteLine("正在检查选定的分支...如果检查时间过久，可能是因为正在镜像该分支。");
                 HttpWebRequest CheckRequest = WebRequest.Create(string.Format("https://www.userpage.me/osu-update.php?s={0}&v={1}", ver, CurDLClientVer)) as HttpWebRequest;
@@ -197,9 +203,18 @@ namespace osu_download
                     }
                 }
                 Console.WriteLine("全部文件已下载/更新完成！");
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
-                Console.WriteLine("下载失败！" + e.Message);
+                string ErrorMessage = e.Message;
+                if (e is WebException we)
+                {
+                    if (we.Status == WebExceptionStatus.ProtocolError)
+                    {
+                        ErrorMessage = "返回错误信息：" + new StreamReader((we.Response as HttpWebResponse).GetResponseStream(), Encoding.UTF8).ReadToEnd();
+                    }
+                }
+                Console.WriteLine("下载失败！" + ErrorMessage);
             }
             Console.WriteLine("请按任意键继续...");
             Console.ReadKey(true);
