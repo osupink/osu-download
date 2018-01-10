@@ -31,11 +31,10 @@ namespace osu_download
             PingReply pingreply = ping.Send(Address, 2000);
             if (pingreply.Status == IPStatus.Success)
             {
-                if (pingreply.RoundtripTime > 32767)
+                if (pingreply.RoundtripTime <= 32767)
                 {
-                    return 2000;
+                    return (short)pingreply.RoundtripTime;
                 }
-                return (short)pingreply.RoundtripTime;
             }
             return 2000;
         }
