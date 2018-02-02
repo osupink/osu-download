@@ -174,6 +174,9 @@ namespace osu_download
                         {
                             Console.WriteLine("已创建安装目录。");
                             Directory.CreateDirectory(InstallPath);
+                        } else if (File.Exists(InstallPath + @"\" + "osu!.cfg"))
+                        {
+                            File.Delete(InstallPath + @"\" + "osu!.cfg");
                         }
                         string isUpdate = "下载";
                         string filepath = InstallPath + @"\" + filearr[1];
