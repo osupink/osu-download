@@ -43,33 +43,43 @@ namespace osu_download
         {
             string Author = "asd";
             string ProgramTitle = "osu! 镜像下载客户端";
-            string CurDLClientVer = "b20180202.1";
+            string CurDLClientVer = "b20180202.2";
             string InstallPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\osu!";
             Console.Title = ProgramTitle;
             Console.WriteLine(string.Format("欢迎使用由 {0} 提供的 {1}！", Author, ProgramTitle));
             Console.WriteLine("[广告/反馈] QQ群：132783429");
             Console.WriteLine(string.Format("当前下载客户端版本为：{0}，绿色版客户端默认会安装到 {1}。", CurDLClientVer, InstallPath));
             Console.WriteLine("输入数字然后按下回车(Enter)以选择分支：");
-            Console.WriteLine("0 [Latest(最新版)]，1 [Fallback(回退版)]，2 [Beta(测试版)]，3 [CuttingEdge(前沿版)]，4 [选择路径]");
-            byte ver;
+            Console.WriteLine("0 [选择路径]，1 [Latest(最新版)]，2 [Fallback(回退版)]，3 [Beta(测试版)]，4 [CuttingEdge(前沿版)]");
+            byte VerNumber;
             recheck:
-            while (byte.TryParse(Console.ReadKey(true).KeyChar.ToString(), out ver) != true)
+            while (byte.TryParse(Console.ReadKey(true).KeyChar.ToString(), out VerNumber) != true)
             {
                 Console.WriteLine("输入数字然后按下回车(Enter)以选择分支：");
-                Console.WriteLine("0 [Latest(最新版)]，1 [Fallback(回退版)]，2 [Beta(测试版)]，3 [CuttingEdge(前沿版)]");
+                Console.WriteLine("0 [选择路径]，1 [Latest(最新版)]，2 [Fallback(回退版)]，3 [Beta(测试版)]，4 [CuttingEdge(前沿版)]");
             }
-            if (ver > 3)
+            string Version = "Stable40";
+            switch (VerNumber)
             {
-                if (ver == 4)
-                {
+                case 1:
+                    break;
+                case 2:
+                    Version = "Stable";
+                    break;
+                case 3:
+                    Version = "Beta40";
+                    break;
+                case 4:
+                    Version = "CuttingEdge";
+                    break;
+                case 0:
                     string SelectedDirPath = DialogDirPath().TrimEnd('\\');
                     if (!string.IsNullOrEmpty(SelectedDirPath))
                     {
                         InstallPath = SelectedDirPath;
                         Console.WriteLine(string.Format("新的安装路径为：{0}", InstallPath));
                     }
-                }
-                goto recheck;
+                    goto recheck;
             }
             try
             {
@@ -148,7 +158,7 @@ namespace osu_download
                     CurMirror = MirrorList[SelectedMirror];
                 }
                 Console.WriteLine("正在检查选定的分支...如果检查时间过久，可能是因为正在镜像该分支。");
-                HttpWebRequest CheckRequest = WebRequest.Create(string.Format("https://www.userpage.me/osu-update.php?s={0}&v={1}", ver, CurDLClientVer)) as HttpWebRequest;
+                HttpWebRequest CheckRequest = WebRequest.Create(string.Format("https://www.userpage.me/osu-update.php?s={0}&v={1}", Version, CurDLClientVer)) as HttpWebRequest;
                 CheckRequest.Method = "GET";
                 CheckRequest.Timeout = 120000;
                 HttpWebResponse CheckWebResponse = CheckRequest.GetResponse() as HttpWebResponse;
@@ -166,6 +176,7 @@ namespace osu_download
                     {
                         string uri = tmp.Replace("File:", "");
                         string[] filearr = uri.Split('/');
+                        string cfgpath = InstallPath + @"\" + "osu!.cfg";
                         if (filearr.Length < 2)
                         {
                             throw new Exception("数据不正确！");
@@ -174,9 +185,10 @@ namespace osu_download
                         {
                             Console.WriteLine("已创建安装目录。");
                             Directory.CreateDirectory(InstallPath);
-                        } else if (File.Exists(InstallPath + @"\" + "osu!.cfg"))
+                        } else if (File.Exists(cfgpath))
                         {
-                            File.Delete(InstallPath + @"\" + "osu!.cfg");
+                            File.Delete(cfgpath);
+                            File.WriteAllText(cfgpath, string.Format("_ReleaseStream = {0}\n", Version));
                         }
                         string isUpdate = "下载";
                         string filepath = InstallPath + @"\" + filearr[1];
