@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
@@ -43,20 +44,31 @@ namespace osu_download
         {
             string Author = "asd";
             string ProgramTitle = "osu! 镜像下载客户端";
-            string CurDLClientVer = "b20180202.2";
+            string CurDLClientVer = "b20180202.3";
             string InstallPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\osu!";
             Console.Title = ProgramTitle;
             Console.WriteLine(string.Format("欢迎使用由 {0} 提供的 {1}！", Author, ProgramTitle));
             Console.WriteLine("[广告/反馈] QQ群：132783429");
             Console.WriteLine(string.Format("当前下载客户端版本为：{0}，绿色版客户端默认会安装到 {1}。", CurDLClientVer, InstallPath));
-            Console.WriteLine("输入数字然后按下回车(Enter)以选择分支：");
-            Console.WriteLine("0 [选择路径]，1 [Latest(最新版)]，2 [Fallback(回退版)]，3 [Beta(测试版)]，4 [CuttingEdge(前沿版)]");
+            try
+            {
+                RegistryKey RegLM = Registry.LocalMachine;
+                RegistryKey FIPSKey = RegLM.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\Lsa\FipsAlgorithmPolicy", true);
+                if (FIPSKey.GetValue("Enabled").ToString() != "0")
+                {
+                    FIPSKey.SetValue("Enabled", 0);
+                    Console.WriteLine("已自动修复导致 osu! 无限更新及工具无法使用的问题。");
+                }
+                FIPSKey.Close();
+                RegLM.Close();
+            } catch { }
             byte VerNumber;
             recheck:
+            Console.WriteLine("输入数字以选择路径或分支：");
+            Console.WriteLine("0 [选择路径]，1 [Latest(最新版)]，2 [Fallback(回退版)]，3 [Beta(测试版)]，4 [CuttingEdge(前沿版)]");
             while (byte.TryParse(Console.ReadKey(true).KeyChar.ToString(), out VerNumber) != true)
             {
-                Console.WriteLine("输入数字然后按下回车(Enter)以选择分支：");
-                Console.WriteLine("0 [选择路径]，1 [Latest(最新版)]，2 [Fallback(回退版)]，3 [Beta(测试版)]，4 [CuttingEdge(前沿版)]");
+                goto recheck;
             }
             string Version = "Stable40";
             switch (VerNumber)
@@ -79,6 +91,8 @@ namespace osu_download
                         InstallPath = SelectedDirPath;
                         Console.WriteLine(string.Format("新的安装路径为：{0}", InstallPath));
                     }
+                    goto recheck;
+                default:
                     goto recheck;
             }
             try
@@ -131,12 +145,12 @@ namespace osu_download
                     MirrorList.Add(tmp.Value[0]);
                     Console.WriteLine(string.Format("{0}.{1}", count++, MirrorTitle));
                 }
-                Console.WriteLine("输入数字以选择 Mirror。");
                 byte SelectedMirror;
                 recheckserver:
+                Console.WriteLine("输入数字以选择 Mirror。");
                 while (byte.TryParse(Console.ReadKey(true).KeyChar.ToString(), out SelectedMirror) != true)
                 {
-                    Console.WriteLine("输入数字以选择 Mirror。");
+                    goto recheckserver;
                 }
                 if (SelectedMirror > count || SelectedMirror == 0)
                 {
