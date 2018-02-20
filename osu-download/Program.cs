@@ -39,13 +39,22 @@ namespace osu_download
             }
             return 2000;
         }
+        static void WriteMirror(byte count, string MirrorName, short MirrorPingDelay, string MirrorAD)
+        {
+            string MirrorText = string.Format("{0}.{1} (延迟：{2}ms)", count, MirrorName, MirrorPingDelay);
+            if (MirrorAD != null)
+            {
+                MirrorText += " " + string.Format("[{0}]", MirrorAD);
+            }
+            Console.WriteLine(MirrorText);
+        }
         [STAThread]
         static void Main(string[] args)
         {
             string Author = "asd";
             string ProgramTitle = "osu! 镜像下载客户端";
-            string CurDLClientVer = "b20180204.1";
-            string InstallPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\osu!";
+            string CurDLClientVer = "b20180220.1";
+            string InstallPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "osu!");
             Console.Title = ProgramTitle;
             Console.WriteLine(string.Format("欢迎使用由 {0} 提供的 {1}！", Author, ProgramTitle));
             Console.WriteLine("[广告/反馈] QQ群：132783429");
@@ -85,7 +94,7 @@ namespace osu_download
                     Version = "CuttingEdge";
                     break;
                 case 0:
-                    string SelectedDirPath = DialogDirPath().TrimEnd('\\');
+                    string SelectedDirPath = DialogDirPath().TrimEnd('\\', '/');
                     if (!string.IsNullOrEmpty(SelectedDirPath))
                     {
                         InstallPath = SelectedDirPath;
@@ -126,24 +135,18 @@ namespace osu_download
                     string[] OfficialMirrorSplit = OfficialMirror.Split('|');
                     OfficialMirrorURL = OfficialMirrorSplit[0];
                     string OfficialMirrorName = OfficialMirrorSplit[1];
-                    short OfficialPingDelay = Ping(new Uri(OfficialMirrorURL).Host);
-                    string OfficialMirrorTitle = string.Format("{0}.{1} (延迟：{2}ms)", count++, OfficialMirrorName, OfficialPingDelay);
-                    if (OfficialMirrorSplit.Length > 2)
-                    {
-                        OfficialMirrorTitle += string.Format(" [{0}]", OfficialMirrorSplit[2]);
-                    }
-                    Console.WriteLine(OfficialMirrorTitle);
+                    short OfficialMirrorPingDelay = Ping(new Uri(OfficialMirrorURL).Host);
+                    string OfficialMirrorAD = (OfficialMirrorSplit.Length > 2) ? OfficialMirrorSplit[2] : null;
+                    WriteMirror(count++, OfficialMirrorName, OfficialMirrorPingDelay, OfficialMirrorAD);
                 }
                 List<string> MirrorList = new List<string>();
                 foreach (var tmp in MirrorDictionary)
                 {
-                    string MirrorTitle = string.Format("{0} (延迟：{1}ms)", tmp.Value[1], tmp.Key);
-                    if (tmp.Value.Length > 2)
-                    {
-                        MirrorTitle += string.Format(" [{0}]", tmp.Value[2]);
-                    }
+                    string MirrorName = tmp.Value[1];
+                    short MirrorPingDelay = tmp.Key;
+                    string MirrorAD = (tmp.Value.Length > 2) ? tmp.Value[2] : null;
                     MirrorList.Add(tmp.Value[0]);
-                    Console.WriteLine(string.Format("{0}.{1}", count++, MirrorTitle));
+                    WriteMirror(count++, MirrorName, MirrorPingDelay, MirrorAD);
                 }
                 byte SelectedMirror;
                 recheckserver:
@@ -158,14 +161,14 @@ namespace osu_download
                     goto recheckserver;
                 }
                 string CurMirror = null;
-                if (OfficialMirrorURL != null && SelectedMirror == 1)
+                if (OfficialMirror != null && SelectedMirror == 1)
                 {
                     CurMirror = OfficialMirrorURL;
                 }
                 else
                 {
                     SelectedMirror--;
-                    if (OfficialMirrorURL != null)
+                    if (OfficialMirror != null)
                     {
                         SelectedMirror--;
                     }
@@ -190,7 +193,7 @@ namespace osu_download
                     {
                         string uri = tmp.Replace("File:", "");
                         string[] filearr = uri.Split('/');
-                        string cfgpath = InstallPath + @"\" + "osu!.cfg";
+                        string cfgpath = Path.Combine(InstallPath, "osu!.cfg");
                         if (filearr.Length < 2)
                         {
                             throw new Exception("数据不正确！");
@@ -205,7 +208,7 @@ namespace osu_download
                             File.WriteAllText(cfgpath, string.Format("_ReleaseStream = {0}\n", Version));
                         }
                         string isUpdate = "下载";
-                        string filepath = InstallPath + @"\" + filearr[1];
+                        string filepath = Path.Combine(InstallPath, filearr[1]);
                         if (File.Exists(filepath))
                         {
                             if (GetFileHash(filepath) == filearr[0].ToLower())
@@ -230,8 +233,14 @@ namespace osu_download
                         }
                     }
                 }
-                Console.WriteLine("全部文件已下载/更新完成，将自动打开安装路径！");
-                System.Diagnostics.Process.Start(InstallPath);
+                string DoneText = "全部文件已下载/更新完成";
+                if (!System.Environment.OSVersion.ToString().ToLower().Contains("unix"))
+                {
+                    DoneText += "，将自动打开安装路径！";
+                    System.Diagnostics.Process.Start(InstallPath);
+                }
+                DoneText += "！";
+                Console.WriteLine(DoneText);
             }
             catch (Exception e)
             {
