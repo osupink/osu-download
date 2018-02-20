@@ -236,7 +236,7 @@ namespace osu_download
                 string DoneText = "全部文件已下载/更新完成";
                 if (!System.Environment.OSVersion.ToString().ToLower().Contains("unix"))
                 {
-                    DoneText += "，将自动打开安装路径！";
+                    DoneText += "，将自动打开安装路径";
                     System.Diagnostics.Process.Start(InstallPath);
                 }
                 DoneText += "！";
