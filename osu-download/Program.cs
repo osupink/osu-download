@@ -28,15 +28,18 @@ namespace osu_download
         }
         static short Ping(string Address)
         {
-            Ping ping = new Ping();
-            PingReply pingreply = ping.Send(Address, 2000);
-            if (pingreply.Status == IPStatus.Success)
+            try
             {
-                if (pingreply.RoundtripTime <= 32767)
+                Ping ping = new Ping();
+                PingReply pingreply = ping.Send(Address, 2000);
+                if (pingreply.Status == IPStatus.Success)
                 {
-                    return (short)pingreply.RoundtripTime;
+                    if (pingreply.RoundtripTime <= 32767)
+                    {
+                        return (short)pingreply.RoundtripTime;
+                    }
                 }
-            }
+            } catch { }
             return 2000;
         }
         static void WriteMirror(byte count, string MirrorName, short MirrorPingDelay, string MirrorAD)
