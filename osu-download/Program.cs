@@ -56,7 +56,7 @@ namespace osu_download
         {
             string Author = "asd";
             string ProgramTitle = "osu! 镜像下载客户端";
-            string CurDLClientVer = "b20180415.1";
+            string CurDLClientVer = "b20180415.2";
             string InstallPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "osu!");
             string[] License = null;
             if (File.Exists("License"))
@@ -140,7 +140,7 @@ namespace osu_download
                         MirrorDictionary.Add(Ping(new Uri(MirrorSplit[0]).Host), MirrorSplit);
                     }
                 }
-                byte count = 1;
+                byte count = 0;
                 string OfficialMirrorURL = null;
                 if (OfficialMirror != null)
                 {
@@ -167,7 +167,7 @@ namespace osu_download
                 {
                     goto recheckserver;
                 }
-                if (SelectedMirror > count || SelectedMirror == 0)
+                if (SelectedMirror >= count || SelectedMirror == 0)
                 {
                     Console.WriteLine("所选择的 Mirror 不存在。");
                     goto recheckserver;
