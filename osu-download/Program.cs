@@ -1,6 +1,7 @@
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.NetworkInformation;
@@ -56,7 +57,7 @@ namespace osu_download
         {
             string Author = "asd";
             string ProgramTitle = "osu! 镜像下载客户端";
-            string CurDLClientVer = "b20180415.2";
+            string CurDLClientVer = "b20180415.3";
             string InstallPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "osu!");
             string[] License = null;
             if (File.Exists("License"))
@@ -198,6 +199,8 @@ namespace osu_download
                     throw new Exception("无法获取数据！");
                 }
                 Console.WriteLine("检查完毕！");
+                Stopwatch spendTime = new Stopwatch();
+                spendTime.Start();
                 string[] ArrResponse = CheckResponse.Split(Environment.NewLine.ToCharArray());
                 foreach (string tmp in ArrResponse)
                 {
@@ -245,7 +248,10 @@ namespace osu_download
                         }
                     }
                 }
-                string DoneText = "全部文件已下载/更新完成";
+                spendTime.Stop();
+                TimeSpan spendTimeSpan = spendTime.Elapsed;
+                string DoneText = "全部文件已下载/更新完成，耗时：" + string.Format("{0:00}:{1:00}:{2:00}",
+            spendTimeSpan.Hours, spendTimeSpan.Minutes, spendTimeSpan.Seconds);
                 if (!System.Environment.OSVersion.ToString().ToLower().Contains("unix"))
                 {
                     DoneText += "，将自动打开安装路径";
