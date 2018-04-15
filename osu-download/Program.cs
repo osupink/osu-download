@@ -1,4 +1,4 @@
-﻿using Microsoft.Win32;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -56,8 +56,17 @@ namespace osu_download
         {
             string Author = "asd";
             string ProgramTitle = "osu! 镜像下载客户端";
-            string CurDLClientVer = "b20180326.1";
+            string CurDLClientVer = "b20180415.1";
             string InstallPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "osu!");
+            string[] License = null;
+            if (File.Exists("License"))
+            {
+                License = File.ReadAllText("License").Split(':');
+                if (License.Length != 2)
+                {
+                    License = null;
+                }
+            }
             Console.Title = ProgramTitle;
             Console.WriteLine(string.Format("欢迎使用由 {0} 提供的 {1}！", Author, ProgramTitle));
             Console.WriteLine("[广告/反馈] QQ群：132783429");
@@ -110,7 +119,7 @@ namespace osu_download
             try
             {
                 Console.WriteLine("正在获取 Mirror...");
-                HttpWebRequest MirrorRequest = WebRequest.Create("https://www.userpage.me/osu-update.php?om=1&v=" + CurDLClientVer) as HttpWebRequest;
+                HttpWebRequest MirrorRequest = WebRequest.Create("https://www.userpage.me/osu-update.php?" + string.Format("om=1&v={0}", CurDLClientVer) + ((License != null) ? "&p=1" : "")) as HttpWebRequest;
                 MirrorRequest.Method = "GET";
                 MirrorRequest.Timeout = 10000;
                 HttpWebResponse MirrorWebResponse = MirrorRequest.GetResponse() as HttpWebResponse;
@@ -224,7 +233,7 @@ namespace osu_download
                         }
                         Console.WriteLine(string.Format("正在" + isUpdate + "：{0}...", filearr[1]));
                         WebClient wc = new WebClient();
-                        wc.DownloadFile(CurMirror + uri, filepath);
+                        wc.DownloadFile(CurMirror + uri + ((License != null) ? string.Format("?u={0}&h={1}",License[0],License[1]) : ""), filepath);
                         if (filearr[0].ToLower() != GetFileHash(filepath))
                         {
                             File.Delete(filepath);
