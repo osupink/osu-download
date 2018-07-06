@@ -57,7 +57,7 @@ namespace osu_download
         {
             string Author = "asd";
             string ProgramTitle = "osu! 镜像下载客户端";
-            string CurDLClientVer = "b20180415.3";
+            string CurDLClientVer = "b20180706.1";
             string InstallPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "osu!");
             string[] License = null;
             if (File.Exists("License"))
@@ -209,7 +209,7 @@ namespace osu_download
                         string uri = tmp.Replace("File:", "");
                         string[] filearr = uri.Split('/');
                         string cfgpath = Path.Combine(InstallPath, "osu!.cfg");
-                        if (filearr.Length < 2)
+                        if (filearr.Length < 2 || string.IsNullOrEmpty(filearr[1]))
                         {
                             throw new Exception("数据不正确！");
                         }
