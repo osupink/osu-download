@@ -71,7 +71,7 @@ namespace osu_download
             Console.Title = ProgramTitle;
             Console.WriteLine(string.Format("欢迎使用由 {0} 提供的 {1}！", Author, ProgramTitle));
             Console.WriteLine("[广告/反馈] QQ群：132783429");
-            Console.WriteLine(string.Format("当前下载客户端版本为：{0}，绿色版客户端默认会安装到 {1}。", CurDLClientVer, InstallPath));
+            Console.WriteLine(string.Format("当前下载客户端版本为：{0}，客户端默认会安装到 {1}。", CurDLClientVer, InstallPath));
             try
             {
                 RegistryKey RegLM = Registry.LocalMachine;
@@ -187,7 +187,7 @@ namespace osu_download
                     }
                     CurMirror = MirrorList[SelectedMirror];
                 }
-                Console.WriteLine("正在检查选定的分支...如果检查时间过久，可能是因为正在镜像该分支。");
+                Console.WriteLine("正在检查选定的分支...");
                 HttpWebRequest CheckRequest = WebRequest.Create(string.Format("https://www.userpage.me/osu-update.php?s={0}&v={1}", Version, CurDLClientVer)) as HttpWebRequest;
                 CheckRequest.Method = "GET";
                 CheckRequest.Timeout = 120000;
