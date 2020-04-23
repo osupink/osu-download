@@ -117,11 +117,11 @@ namespace osu_download
                 default:
                     goto recheck;
             }
+            ServicePointManager.SecurityProtocol = (SecurityProtocolType)192 | (SecurityProtocolType)768 | (SecurityProtocolType)3072;
             try
             {
                 Console.WriteLine("正在获取 Mirror...");
                 HttpWebRequest MirrorRequest = WebRequest.Create("https://www.userpage.me/osu-update.php?" + string.Format("om=1&v={0}", CurDLClientVer) + ((License != null) ? "&p=1" : "")) as HttpWebRequest;
-                MirrorRequest.Method = "GET";
                 MirrorRequest.Timeout = 10000;
                 HttpWebResponse MirrorWebResponse = MirrorRequest.GetResponse() as HttpWebResponse;
                 string MirrorResponse = new StreamReader(MirrorWebResponse.GetResponseStream(), Encoding.UTF8).ReadToEnd();
@@ -189,8 +189,7 @@ namespace osu_download
                 }
                 Console.WriteLine("正在检查选定的分支...");
                 HttpWebRequest CheckRequest = WebRequest.Create(string.Format("https://www.userpage.me/osu-update.php?s={0}&v={1}", Version, CurDLClientVer)) as HttpWebRequest;
-                CheckRequest.Method = "GET";
-                CheckRequest.Timeout = 120000;
+                CheckRequest.Timeout = 10000;
                 HttpWebResponse CheckWebResponse = CheckRequest.GetResponse() as HttpWebResponse;
                 string CheckResponse = new StreamReader(CheckWebResponse.GetResponseStream(), Encoding.UTF8).ReadToEnd();
                 CheckWebResponse.Close();
