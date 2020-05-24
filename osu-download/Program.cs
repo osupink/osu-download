@@ -57,7 +57,7 @@ namespace osu_download
         {
             string Author = "asd";
             string ProgramTitle = "osu! 镜像下载客户端";
-            string CurDLClientVer = "b20180706.1";
+            string CurDLClientVer = "b20200524.1";
             string InstallPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "osu!");
             string[] License = null;
             if (File.Exists("License"))
@@ -71,7 +71,7 @@ namespace osu_download
             Console.Title = ProgramTitle;
             Console.WriteLine(string.Format("欢迎使用由 {0} 提供的 {1}！", Author, ProgramTitle));
             Console.WriteLine("[广告/反馈] QQ群：132783429");
-            Console.WriteLine(string.Format("当前下载客户端版本为：{0}，客户端默认会安装到 {1}。", CurDLClientVer, InstallPath));
+            Console.WriteLine(string.Format("当前镜像下载客户端版本为：{0}，客户端默认会安装到 {1}。", CurDLClientVer, InstallPath));
             try
             {
                 RegistryKey RegLM = Registry.LocalMachine;
