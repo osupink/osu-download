@@ -57,7 +57,7 @@ namespace osu_download
         {
             string Author = "asd";
             string ProgramTitle = "osu! 镜像下载客户端";
-            string CurDLClientVer = "b20200524.1";
+            string CurDLClientVer = "b20200530.1";
             string InstallPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "osu!");
             string[] License = null;
             if (File.Exists("License"))
@@ -121,7 +121,7 @@ namespace osu_download
             try
             {
                 Console.WriteLine("正在获取 Mirror...");
-                HttpWebRequest MirrorRequest = WebRequest.Create("https://www.userpage.me/osu-update.php?" + string.Format("om=1&v={0}", CurDLClientVer) + ((License != null) ? "&p=1" : "")) as HttpWebRequest;
+                HttpWebRequest MirrorRequest = WebRequest.Create("https://mirror.osu.pink/osu-update.php?" + string.Format("om=1&v={0}", CurDLClientVer) + ((License != null) ? "&p=1" : "")) as HttpWebRequest;
                 MirrorRequest.Timeout = 10000;
                 HttpWebResponse MirrorWebResponse = MirrorRequest.GetResponse() as HttpWebResponse;
                 string MirrorResponse = new StreamReader(MirrorWebResponse.GetResponseStream(), Encoding.UTF8).ReadToEnd();
