@@ -303,7 +303,6 @@ namespace osu_download
                     }
                 }
                 Console.WriteLine("下载失败！" + ErrorMessage);
-                Console.WriteLine(e);
             }
             Console.WriteLine("请按任意键继续...");
             Console.ReadKey(true);
