@@ -171,7 +171,7 @@ namespace osu_download
                 }
                 byte count = 1;
                 // 无论何种镜像类型，默认都不会开启防篡改和完整性校验功能
-                bool OfficialMirrorURL = null;
+                string OfficialMirrorURL = null;
                 bool OfficialMirrorHashCheck = false;
                 if (OfficialMirror != null)
                 {
