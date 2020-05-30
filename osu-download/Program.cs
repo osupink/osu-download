@@ -127,7 +127,6 @@ namespace osu_download
                 HttpWebResponse MirrorWebResponse = MirrorRequest.GetResponse() as HttpWebResponse;
                 string MirrorResponse = new StreamReader(MirrorWebResponse.GetResponseStream(), Encoding.UTF8).ReadToEnd();
                 MirrorWebResponse.Close();
-                string OfficialNotice = null;
                 string OfficialMirror = null;
                 SortedDictionary<short, string[]> MirrorDictionary = new SortedDictionary<short, string[]>();
                 string[] MirrorArrResponse = MirrorResponse.Split(Environment.NewLine.ToCharArray());
@@ -159,13 +158,14 @@ namespace osu_download
                     string OfficialMirrorAD = (OfficialMirrorSplit.Length > 2) ? OfficialMirrorSplit[2] : null;
                     WriteMirror(count++, OfficialMirrorName, OfficialMirrorPingDelay, OfficialMirrorAD);
                 }
-                List<string> MirrorList = new List<string>();
+                List<string, bool> MirrorList = new List<string, bool>();
                 foreach (var tmp in MirrorDictionary)
                 {
                     string MirrorName = tmp.Value[1];
                     short MirrorPingDelay = tmp.Key;
-                    string MirrorAD = (tmp.Value.Length > 2) ? tmp.Value[2] : null;
-                    MirrorList.Add(tmp.Value[0]);
+                    bool MirrorHashCheck = (tmp.Value.Length > 2 && tmp.Value[2] == 1) ? true : false;
+                    string MirrorAD = (tmp.Value.Length > 3) ? tmp.Value[3] : null;
+                    MirrorList.Add(tmp.Value[0], MirrorHashCheck);
                     WriteMirror(count++, MirrorName, MirrorPingDelay, MirrorAD);
                 }
                 byte SelectedMirror;
