@@ -58,6 +58,7 @@ namespace osu_download
             string Author = "asd";
             string ProgramTitle = "osu! 镜像下载客户端";
             string CurDLClientVer = "b20200530.1";
+            string ServerURL = "https://mirror.osu.pink/osu-update.php";
             string InstallPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "osu!");
             string[] License = null;
             if (File.Exists("License"))
@@ -121,18 +122,24 @@ namespace osu_download
             try
             {
                 Console.WriteLine("正在获取 Mirror...");
-                HttpWebRequest MirrorRequest = WebRequest.Create("https://mirror.osu.pink/osu-update.php?" + string.Format("om=1&v={0}", CurDLClientVer) + ((License != null) ? "&p=1" : "")) as HttpWebRequest;
+                HttpWebRequest MirrorRequest = WebRequest.Create(ServerURL + string.Format("?om=1&v={0}", CurDLClientVer) + ((License != null) ? "&p=1" : "")) as HttpWebRequest;
                 MirrorRequest.Timeout = 10000;
                 HttpWebResponse MirrorWebResponse = MirrorRequest.GetResponse() as HttpWebResponse;
                 string MirrorResponse = new StreamReader(MirrorWebResponse.GetResponseStream(), Encoding.UTF8).ReadToEnd();
                 MirrorWebResponse.Close();
+                string OfficialNotice = null;
                 string OfficialMirror = null;
                 SortedDictionary<short, string[]> MirrorDictionary = new SortedDictionary<short, string[]>();
                 string[] MirrorArrResponse = MirrorResponse.Split(Environment.NewLine.ToCharArray());
                 foreach (string tmp in MirrorArrResponse)
                 {
-                    if (tmp.StartsWith("OfficialMirror:"))
+                    if (tmp.StartsWith("OfficialNotice:"))
                     {
+                        Console.WriteLine("来自服务器的公告：" + tmp.Replace("OfficialNotice:", ""));
+                    }
+                    else if (tmp.StartsWith("OfficialMirror:"))
+                    {
+                        // 不同于 OfficialNotice，实现使其只支持最多一个，如果有多个 OfficalMirror，那么应该会选取最后一个
                         OfficialMirror = tmp.Replace("OfficialMirror:", "");
                     }
                     else if (tmp.StartsWith("Mirror:"))
@@ -188,7 +195,7 @@ namespace osu_download
                     CurMirror = MirrorList[SelectedMirror];
                 }
                 Console.WriteLine("正在检查选定的分支...");
-                HttpWebRequest CheckRequest = WebRequest.Create(string.Format("https://www.userpage.me/osu-update.php?s={0}&v={1}", Version, CurDLClientVer)) as HttpWebRequest;
+                HttpWebRequest CheckRequest = WebRequest.Create(ServerURL + string.Format("?s={0}&v={1}", Version, CurDLClientVer)) as HttpWebRequest;
                 CheckRequest.Timeout = 10000;
                 HttpWebResponse CheckWebResponse = CheckRequest.GetResponse() as HttpWebResponse;
                 string CheckResponse = new StreamReader(CheckWebResponse.GetResponseStream(), Encoding.UTF8).ReadToEnd();
