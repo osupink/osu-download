@@ -69,7 +69,7 @@ namespace osu_download
         {
             string Author = "asd";
             string ProgramTitle = "osu! 镜像下载客户端";
-            string CurDLClientVer = "b20200530.1";
+            string CurDLClientVer = "b20200530.2";
             string ServerURL = "https://mirror.osu.pink/osu-update.php";
             string InstallPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "osu!");
             string[] License = null;
@@ -170,14 +170,20 @@ namespace osu_download
                     }
                 }
                 byte count = 1;
-                string OfficialMirrorURL = null;
+                // 无论何种镜像类型，默认都不会开启防篡改和完整性校验功能
+                bool OfficialMirrorURL = null;
+                bool OfficialMirrorHashCheck = false;
                 if (OfficialMirror != null)
                 {
                     string[] OfficialMirrorSplit = OfficialMirror.Split('|');
                     OfficialMirrorURL = OfficialMirrorSplit[0];
                     string OfficialMirrorName = OfficialMirrorSplit[1];
                     short OfficialMirrorPingDelay = Ping(new Uri(OfficialMirrorURL).Host);
-                    string OfficialMirrorAD = (OfficialMirrorSplit.Length > 2) ? OfficialMirrorSplit[2] : null;
+                    if (OfficialMirrorSplit.Length > 2 && OfficialMirrorSplit[2] == "1")
+                    {
+                        OfficialMirrorHashCheck = true;
+                    }
+                    string OfficialMirrorAD = (OfficialMirrorSplit.Length > 3) ? OfficialMirrorSplit[3] : null;
                     WriteMirror(count++, OfficialMirrorName, OfficialMirrorPingDelay, OfficialMirrorAD);
                 }
                 List<string> MirrorList = new List<string>();
@@ -207,9 +213,11 @@ namespace osu_download
                     goto recheckserver;
                 }
                 string CurMirror = null;
+                bool CurMirrorHashCheck = false;
                 if (OfficialMirror != null && SelectedMirror == 1)
                 {
                     CurMirror = OfficialMirrorURL;
+                    CurMirrorHashCheck = OfficialMirrorHashCheck;
                 }
                 else
                 {
@@ -219,6 +227,7 @@ namespace osu_download
                         SelectedMirror--;
                     }
                     CurMirror = MirrorList[SelectedMirror];
+                    CurMirrorHashCheck = MirrorCheckList[SelectedMirror];
                 }
                 Console.WriteLine("正在检查选定的分支...");
                 HttpWebRequest CheckRequest = WebRequest.Create(ServerURL + string.Format("?s={0}&v={1}", Version, CurDLClientVer)) as HttpWebRequest;
@@ -268,7 +277,7 @@ namespace osu_download
                         }
                         Console.WriteLine(string.Format("正在" + isUpdate + "：{0}...", filearr[1]));
                         ClientWebClient wc = new ClientWebClient();
-                        wc.DownloadFile(CurMirror + (MirrorCheckList[SelectedMirror] ? uri : filearr[1]) + ((License != null) ? string.Format("?u={0}&h={1}",License[0],License[1]) : ""), filepath);
+                        wc.DownloadFile(CurMirror + (CurMirrorHashCheck ? uri : filearr[1]) + ((License != null) ? string.Format("?u={0}&h={1}",License[0],License[1]) : ""), filepath);
                         if (MirrorCheckList[SelectedMirror] && filearr[0].ToLower() != GetFileHash(filepath))
                         {
                             File.Delete(filepath);
