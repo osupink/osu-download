@@ -52,6 +52,18 @@ namespace osu_download
             }
             Console.WriteLine(MirrorText);
         }
+        class ClientWebClient : WebClient
+        {
+            protected override WebRequest GetWebRequest(Uri address)
+            {
+                WebRequest req = base.GetWebRequest(address);
+                if (req is HttpWebRequest)
+                {
+                    (req as HttpWebRequest).KeepAlive = false;
+                }
+                return req;
+            }
+        }
         [STAThread]
         static void Main(string[] args)
         {
@@ -128,7 +140,7 @@ namespace osu_download
                 string MirrorResponse = new StreamReader(MirrorWebResponse.GetResponseStream(), Encoding.UTF8).ReadToEnd();
                 MirrorWebResponse.Close();
                 string OfficialMirror = null;
-                SortedDictionary<short, string[]> MirrorDictionary = new SortedDictionary<short, string[]>();
+                SortedDictionary<short, List<string[]>> MirrorDictionary = new SortedDictionary<short, List<string[]>>();
                 string[] MirrorArrResponse = MirrorResponse.Split(Environment.NewLine.ToCharArray());
                 foreach (string tmp in MirrorArrResponse)
                 {
@@ -144,7 +156,17 @@ namespace osu_download
                     else if (tmp.StartsWith("Mirror:"))
                     {
                         string[] MirrorSplit = tmp.Replace("Mirror:", "").Split('|');
-                        MirrorDictionary.Add(Ping(new Uri(MirrorSplit[0]).Host), MirrorSplit);
+                        short MirrorPing = Ping(new Uri(MirrorSplit[0]).Host);
+                        if (!MirrorDictionary.ContainsKey(MirrorPing)) {
+                            List<string[]> tmpList = new List<string[]>
+                            {
+                                MirrorSplit
+                            };
+                            MirrorDictionary.Add(MirrorPing, tmpList);
+                        } else
+                        {
+                            MirrorDictionary[MirrorPing].Add(MirrorSplit);
+                        }
                     }
                 }
                 byte count = 1;
@@ -158,15 +180,19 @@ namespace osu_download
                     string OfficialMirrorAD = (OfficialMirrorSplit.Length > 2) ? OfficialMirrorSplit[2] : null;
                     WriteMirror(count++, OfficialMirrorName, OfficialMirrorPingDelay, OfficialMirrorAD);
                 }
-                List<string, bool> MirrorList = new List<string, bool>();
+                List<string> MirrorList = new List<string>();
+                List<bool> MirrorCheckList = new List<bool>();
                 foreach (var tmp in MirrorDictionary)
                 {
-                    string MirrorName = tmp.Value[1];
                     short MirrorPingDelay = tmp.Key;
-                    bool MirrorHashCheck = (tmp.Value.Length > 2 && tmp.Value[2] == 1) ? true : false;
-                    string MirrorAD = (tmp.Value.Length > 3) ? tmp.Value[3] : null;
-                    MirrorList.Add(tmp.Value[0], MirrorHashCheck);
-                    WriteMirror(count++, MirrorName, MirrorPingDelay, MirrorAD);
+                    foreach (var tmp2 in tmp.Value) {
+                        string MirrorName = tmp2[1];
+                        bool MirrorHashCheck = (tmp2.Length > 2 && tmp2[2] == "1") ? true : false;
+                        string MirrorAD = (tmp2.Length > 3) ? tmp2[3] : null;
+                        MirrorList.Add(tmp2[0]);
+                        MirrorCheckList.Add(MirrorHashCheck);
+                        WriteMirror(count++, MirrorName, MirrorPingDelay, MirrorAD);
+                    }
                 }
                 byte SelectedMirror;
                 recheckserver:
@@ -241,9 +267,9 @@ namespace osu_download
                             File.Delete(filepath);
                         }
                         Console.WriteLine(string.Format("正在" + isUpdate + "：{0}...", filearr[1]));
-                        WebClient wc = new WebClient();
-                        wc.DownloadFile(CurMirror + uri + ((License != null) ? string.Format("?u={0}&h={1}",License[0],License[1]) : ""), filepath);
-                        if (filearr[0].ToLower() != GetFileHash(filepath))
+                        ClientWebClient wc = new ClientWebClient();
+                        wc.DownloadFile(CurMirror + (MirrorCheckList[SelectedMirror] ? uri : filearr[1]) + ((License != null) ? string.Format("?u={0}&h={1}",License[0],License[1]) : ""), filepath);
+                        if (MirrorCheckList[SelectedMirror] && filearr[0].ToLower() != GetFileHash(filepath))
                         {
                             File.Delete(filepath);
                             Console.WriteLine(string.Format(isUpdate + "失败，文件不一致：{0}", filearr[1]));
@@ -277,6 +303,7 @@ namespace osu_download
                     }
                 }
                 Console.WriteLine("下载失败！" + ErrorMessage);
+                Console.WriteLine(e);
             }
             Console.WriteLine("请按任意键继续...");
             Console.ReadKey(true);
