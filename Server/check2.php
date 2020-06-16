@@ -1,6 +1,5 @@
 <?php
 if (PHP_SAPI !== 'cli') { die(); }
-chdir(__DIR__);
 require_once('config.php');
 set_time_limit(0);
 ini_set('default_socket_timeout', 30);

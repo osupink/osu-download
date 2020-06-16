@@ -1,7 +1,6 @@
 <?php
 require_once('config.php');
 header('content-type:text/plain;charset=utf-8');
-$stream='Stable40';
 $officialMirrorHiddenFlag=1;
 $officialNoticeList=array('[广告] BanYou 是国内领先的 osu! 第三方服务器，我们只针对长期玩家提供服务，注册十分简单，不仅可以单独游玩，还能邀请好友进行多人游戏，并且拥有独立的排名。立即加入我们的玩家群，群号：686469603');
 $mirrorList=array(
@@ -15,7 +14,7 @@ if (isset($_GET['oom']) && $_GET['oom'] == "1") {
 	die($mirrorList[0]);
 }
 if (isset($_GET['v'])) {
-	if (isset($_SERVER['HTTP_USER_AGENT']) && trim(explode('/',$_SERVER['HTTP_USER_AGENT'],1)) >= clientMinVersion)) {
+	if (isset($_SERVER['HTTP_USER_AGENT']) && trim(explode('/',$_SERVER['HTTP_USER_AGENT'],1)) >= clientMinVersion) {
 		header('HTTP/1.1 503 Service Unavailable');
 		die('客户端版本太老！请前往 https://github.com/osupink/osu-download/releases/ 下载新版本。');
 	}
@@ -37,21 +36,5 @@ if (isset($_GET['om']) && $_GET['om'] == "1") {
 		}
 		echo "Mirror:{$value}\n";
 	}
-	die();
-}
-if (isset($_GET['s'])) {
-	if (in_array($_GET['s'], streamList)) {
-		$stream=$_GET['s'];
-	}
-}
-$checkFile="requested-{$stream}";
-if (!file_exists($checkFile)) {
-	header('HTTP/1.1 503 Service Unavailable');
-	die('服务器暂无任何缓存，请稍后来看看吧～');
-}
-$str=file_get_contents(cacheDir.'/'.filectime($checkFile)."/{$stream}.json");
-$json=json_decode($str);
-foreach ($json as $value) {
-	echo "File:{$value->file_hash}/{$value->filename}\n";
 }
 ?>

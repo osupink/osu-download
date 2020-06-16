@@ -1,6 +1,5 @@
 <?php
 if (PHP_SAPI !== 'cli') { die(); }
-chdir(__DIR__);
 require_once('config.php');
 set_time_limit(0);
 ini_set('default_socket_timeout', 30);
@@ -61,15 +60,16 @@ while (true) {
 				echoWithDate("Saved: {$filePath}");
 			}
 		}
-		if ($isChanged) {
-			$checkFile="requested-{$stream}";
+		$checkFile=cacheDir."/requested-{$stream}";
+		$isNotFound=!file_exists($checkFile);
+		if ($isChanged || $isNotFound) {
 			file_put_contents($checkFile, '1');
 			$fileTime=filectime($checkFile);
 			if (!is_dir(cacheDir.'/'.$fileTime)) {
 				mkdir(cacheDir.'/'.$fileTime);
 			}
 			file_put_contents(cacheDir.'/'.$fileTime."/{$stream}.json", $str);
-			echoWithDate("Checked: {$stream}");
+			echoWithDate(!$isNotFound ? "Checked: {$stream}" : "Fixed: {$stream}");
 		}
 		sleep(10);
 	}

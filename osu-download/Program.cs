@@ -15,8 +15,8 @@ namespace osu_download
     {
         static string Author = "asd";
         static string ProgramTitle = "osu! 镜像下载客户端";
-        static string ServerURL = "https://mirror.osu.pink/osu-update2.php";
-        static string CurDLClientVer = "b20200616.1";
+        static string ServerURL = "https://mirror.osu.pink/osu-update.php";
+        static string CurDLClientVer = "b20200617.1";
         static string GetFileHash(string FilePath)
         {
             MD5CryptoServiceProvider hc = new MD5CryptoServiceProvider();
@@ -54,13 +54,12 @@ namespace osu_download
             {
                 MirrorText += " " + string.Format("[{0}]", MirrorAD);
             }
-            Console.ForegroundColor = ConsoleColor.Green;
+            Console.ForegroundColor = MirrorHashCheck ? ConsoleColor.Green : ConsoleColor.Yellow;
+            Console.WriteLine(MirrorText);
             if (!MirrorHashCheck)
             {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                MirrorText += " 警告：这个 Mirror 不具备防篡改和完整性校验功能";
+                Console.WriteLine("警告：上面的黄色 Mirror 不具备防篡改和完整性校验功能");
             }
-            Console.WriteLine(MirrorText);
             Console.ResetColor();
         }
         static void AddMirrorSplitWithoutConflict(ref SortedDictionary<short, List<string[]>> MirrorDictionary, short MirrorPing, string[] MirrorSplit)
@@ -253,7 +252,7 @@ namespace osu_download
                 }
                 string CurMirror = null;
                 byte CurMirrorHashCheck = 0;
-                if (OfficialMirror != null && SelectedMirror == 1)
+                if (OfficialMirror != null && OfficialMirrorHiddenFlag == 2 && SelectedMirror == 1)
                 {
                     CurMirror = OfficialMirrorURL;
                     CurMirrorHashCheck = (byte)(OfficialMirrorHashCheck == true ? 1 : 0);
@@ -261,7 +260,7 @@ namespace osu_download
                 else
                 {
                     SelectedMirror--;
-                    if (OfficialMirror != null)
+                    if (OfficialMirror != null && OfficialMirrorHiddenFlag == 2)
                     {
                         SelectedMirror--;
                     }
@@ -269,7 +268,7 @@ namespace osu_download
                     CurMirrorHashCheck = MirrorCheckList[SelectedMirror];
                 }
                 Console.WriteLine("正在检查选定的分支...");
-                HttpWebRequest CheckRequest = SendRequest((CurMirrorHashCheck == 2 ? CurMirror : OfficialMirrorURL) + string.Format("?s={0}", Version));
+                HttpWebRequest CheckRequest = SendRequest((CurMirrorHashCheck == 2 ? CurMirror : OfficialMirrorURL) + string.Format("osu-stream.php?s={0}", Version));
                 CheckRequest.Timeout = 10000;
                 HttpWebResponse CheckWebResponse = CheckRequest.GetResponse() as HttpWebResponse;
                 string CheckResponse = new StreamReader(CheckWebResponse.GetResponseStream(), Encoding.UTF8).ReadToEnd();
