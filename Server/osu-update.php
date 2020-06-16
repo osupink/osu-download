@@ -2,10 +2,11 @@
 require_once('config.php');
 header('content-type:text/plain;charset=utf-8');
 $stream='Stable40';
-$officialMirrorFlag=1;
+$officialMirrorHiddenFlag=1;
 $officialNoticeList=array('[广告] BanYou 是国内领先的 osu! 第三方服务器，我们只针对长期玩家提供服务，注册十分简单，不仅可以单独游玩，还能邀请好友进行多人游戏，并且拥有独立的排名。立即加入我们的玩家群，群号：686469603');
 $mirrorList=array(
-	'http://us-la.mirror.osu.pink/|官方 Mirror [美国/洛杉矶]|1',
+	// MirrorURL|MirrorName|MirrorHashCheckFlag (Default: 0, mirror: 0,1,2/officialMirror: 0,1)|MirrorAD|MirrorHiddenFlag (Default: 0, for officialMirror)
+	"http://us-la.mirror.osu.pink/|官方 Mirror [美国/洛杉矶]|1||{$officialMirrorHiddenFlag}", // officialMirror
 	'https://txy1.sayobot.cn/client/|Sayo Mirror [中国/上海]|0|来自 osu.sayobot.cn 的 Mirror，仅支持 Latest，不支持防篡改及完整性校验'
 );
 $payMirrorList=array();
@@ -14,7 +15,7 @@ if (isset($_GET['oom']) && $_GET['oom'] == "1") {
 	die($mirrorList[0]);
 }
 if (isset($_GET['v'])) {
-	if (!(ltrim($_GET['v'],"b") >= clientMinVersion)) {
+	if (isset($_SERVER['HTTP_USER_AGENT']) && trim(explode('/',$_SERVER['HTTP_USER_AGENT'],1)) >= clientMinVersion)) {
 		header('HTTP/1.1 503 Service Unavailable');
 		die('客户端版本太老！请前往 https://github.com/osupink/osu-download/releases/ 下载新版本。');
 	}
@@ -30,13 +31,9 @@ if (isset($_GET['om']) && $_GET['om'] == "1") {
 		}
 	}
 	foreach ($mirrorList as $value) {
-		if ($officialMirrorFlag !== -1) {
-			$officialMirrorFlag=-1;
-			if ($officialMirrorFlag === 2) {
-				echo "Official";
-			} else if ($officialMirrorFlag === 0) {
-				continue;
-			}
+		if ($officialMirrorHiddenFlag !== -1) {
+			$officialMirrorHiddenFlag=-1;
+			echo "Official";
 		}
 		echo "Mirror:{$value}\n";
 	}

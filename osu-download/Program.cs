@@ -13,6 +13,10 @@ namespace osu_download
 {
     class Program
     {
+        static string Author = "asd";
+        static string ProgramTitle = "osu! 镜像下载客户端";
+        static string ServerURL = "https://mirror.osu.pink/osu-update2.php";
+        static string CurDLClientVer = "b20200616.1";
         static string GetFileHash(string FilePath)
         {
             MD5CryptoServiceProvider hc = new MD5CryptoServiceProvider();
@@ -43,14 +47,43 @@ namespace osu_download
             } catch { }
             return 1000;
         }
-        static void WriteMirror(byte count, string MirrorName, short MirrorPingDelay, string MirrorAD)
+        static void WriteMirror(byte count, string MirrorName, short MirrorPingDelay, string MirrorAD, bool MirrorHashCheck = false)
         {
             string MirrorText = string.Format("{0}.{1} (延迟：{2}ms)", count, MirrorName, MirrorPingDelay);
             if (MirrorAD != null)
             {
                 MirrorText += " " + string.Format("[{0}]", MirrorAD);
             }
+            Console.ForegroundColor = ConsoleColor.Green;
+            if (!MirrorHashCheck)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                MirrorText += " 警告：这个 Mirror 不具备防篡改和完整性校验功能";
+            }
             Console.WriteLine(MirrorText);
+            Console.ResetColor();
+        }
+        static void AddMirrorSplitWithoutConflict(ref SortedDictionary<short, List<string[]>> MirrorDictionary, short MirrorPing, string[] MirrorSplit)
+        {
+            if (!MirrorDictionary.ContainsKey(MirrorPing))
+            {
+                List<string[]> tmpList = new List<string[]>
+                            {
+                                MirrorSplit
+                            };
+                MirrorDictionary.Add(MirrorPing, tmpList);
+            }
+            else
+            {
+                MirrorDictionary[MirrorPing].Add(MirrorSplit);
+            }
+        }
+        static HttpWebRequest SendRequest(string URL, int Timeout = 10000)
+        {
+            HttpWebRequest wr = WebRequest.Create(URL) as HttpWebRequest;
+            wr.UserAgent = string.Format("osu-download/{0}", CurDLClientVer);
+            wr.Timeout = Timeout;
+            return wr;
         }
         class ClientWebClient : WebClient
         {
@@ -67,10 +100,6 @@ namespace osu_download
         [STAThread]
         static void Main(string[] args)
         {
-            string Author = "asd";
-            string ProgramTitle = "osu! 镜像下载客户端";
-            string CurDLClientVer = "b20200530.2";
-            string ServerURL = "https://mirror.osu.pink/osu-update.php";
             string InstallPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "osu!");
             string[] License = null;
             if (File.Exists("License"))
@@ -134,8 +163,7 @@ namespace osu_download
             try
             {
                 Console.WriteLine("正在获取 Mirror...");
-                HttpWebRequest MirrorRequest = WebRequest.Create(ServerURL + string.Format("?om=1&v={0}", CurDLClientVer) + ((License != null) ? "&p=1" : "")) as HttpWebRequest;
-                MirrorRequest.Timeout = 10000;
+                HttpWebRequest MirrorRequest = SendRequest(ServerURL + "?om=1" + ((License != null) ? "&p=1" : ""));
                 HttpWebResponse MirrorWebResponse = MirrorRequest.GetResponse() as HttpWebResponse;
                 string MirrorResponse = new StreamReader(MirrorWebResponse.GetResponseStream(), Encoding.UTF8).ReadToEnd();
                 MirrorWebResponse.Close();
@@ -151,73 +179,84 @@ namespace osu_download
                     else if (tmp.StartsWith("OfficialMirror:"))
                     {
                         // 不同于 OfficialNotice，实现使其只支持最多一个，如果有多个 OfficalMirror，那么应该会选取最后一个
+                        // 2020-06-16: 服务端必须下发官方 Mirror，以保证第三方镜像可以通过官方镜像进行校验；原有服务端实现的隐藏官方 Mirror 改为客户端实现
                         OfficialMirror = tmp.Replace("OfficialMirror:", "");
                     }
                     else if (tmp.StartsWith("Mirror:"))
                     {
                         string[] MirrorSplit = tmp.Replace("Mirror:", "").Split('|');
                         short MirrorPing = Ping(new Uri(MirrorSplit[0]).Host);
-                        if (!MirrorDictionary.ContainsKey(MirrorPing)) {
-                            List<string[]> tmpList = new List<string[]>
-                            {
-                                MirrorSplit
-                            };
-                            MirrorDictionary.Add(MirrorPing, tmpList);
-                        } else
-                        {
-                            MirrorDictionary[MirrorPing].Add(MirrorSplit);
-                        }
+                        AddMirrorSplitWithoutConflict(ref MirrorDictionary, MirrorPing, MirrorSplit);
                     }
                 }
                 byte count = 1;
                 // 无论何种镜像类型，默认都不会开启防篡改和完整性校验功能
                 string OfficialMirrorURL = null;
                 bool OfficialMirrorHashCheck = false;
+                byte OfficialMirrorHiddenFlag = 0;
                 if (OfficialMirror != null)
                 {
                     string[] OfficialMirrorSplit = OfficialMirror.Split('|');
                     OfficialMirrorURL = OfficialMirrorSplit[0];
                     string OfficialMirrorName = OfficialMirrorSplit[1];
-                    short OfficialMirrorPingDelay = Ping(new Uri(OfficialMirrorURL).Host);
-                    if (OfficialMirrorSplit.Length > 2 && OfficialMirrorSplit[2] == "1")
+                    if (OfficialMirrorSplit.Length > 2 && (OfficialMirrorSplit[2] == "1" || OfficialMirrorSplit[2] == "2"))
                     {
+                        OfficialMirrorSplit[2] = "1";
                         OfficialMirrorHashCheck = true;
                     }
-                    string OfficialMirrorAD = (OfficialMirrorSplit.Length > 3) ? OfficialMirrorSplit[3] : null;
-                    WriteMirror(count++, OfficialMirrorName, OfficialMirrorPingDelay, OfficialMirrorAD);
+                    if (OfficialMirrorSplit.Length > 4 && byte.TryParse(OfficialMirrorSplit[4], out OfficialMirrorHiddenFlag) && OfficialMirrorHiddenFlag < 3 && OfficialMirrorHiddenFlag != 0)
+                    {
+                        short OfficialMirrorPing = Ping(new Uri(OfficialMirrorURL).Host);
+                        if (OfficialMirrorHiddenFlag == 2)
+                        {
+                            string OfficialMirrorAD = (OfficialMirrorSplit.Length > 3 && !string.IsNullOrEmpty(OfficialMirrorSplit[3])) ? OfficialMirrorSplit[3] : null;
+                            WriteMirror(count++, OfficialMirrorName, OfficialMirrorPing, OfficialMirrorAD, OfficialMirrorHashCheck);
+                        } else
+                        {
+                            AddMirrorSplitWithoutConflict(ref MirrorDictionary, OfficialMirrorPing, OfficialMirrorSplit);
+                        }
+                    }
+                    
                 }
                 List<string> MirrorList = new List<string>();
-                List<bool> MirrorCheckList = new List<bool>();
+                List<byte> MirrorCheckList = new List<byte>();
                 foreach (var tmp in MirrorDictionary)
                 {
                     short MirrorPingDelay = tmp.Key;
                     foreach (var tmp2 in tmp.Value) {
                         string MirrorName = tmp2[1];
-                        bool MirrorHashCheck = (tmp2.Length > 2 && tmp2[2] == "1") ? true : false;
-                        string MirrorAD = (tmp2.Length > 3) ? tmp2[3] : null;
+                        byte MirrorHashCheck = 0;
+                        if (tmp2.Length > 2 && byte.TryParse(tmp2[2], out MirrorHashCheck))
+                        {
+                            if (MirrorHashCheck < 0 || MirrorHashCheck > 2)
+                            {
+                                MirrorHashCheck = 0;
+                            }
+                        }
+                        string MirrorAD = (tmp2.Length > 3 && !string.IsNullOrEmpty(tmp2[3])) ? tmp2[3] : null;
                         MirrorList.Add(tmp2[0]);
                         MirrorCheckList.Add(MirrorHashCheck);
-                        WriteMirror(count++, MirrorName, MirrorPingDelay, MirrorAD);
+                        WriteMirror(count++, MirrorName, MirrorPingDelay, MirrorAD, (MirrorHashCheck > 0) ? true : false);
                     }
                 }
                 byte SelectedMirror;
-                recheckserver:
+                RecheckServer:
                 Console.WriteLine("输入数字以选择 Mirror。");
                 while (byte.TryParse(Console.ReadKey(true).KeyChar.ToString(), out SelectedMirror) != true)
                 {
-                    goto recheckserver;
+                    goto RecheckServer;
                 }
                 if (SelectedMirror >= count || SelectedMirror == 0)
                 {
                     Console.WriteLine("所选择的 Mirror 不存在。");
-                    goto recheckserver;
+                    goto RecheckServer;
                 }
                 string CurMirror = null;
-                bool CurMirrorHashCheck = false;
+                byte CurMirrorHashCheck = 0;
                 if (OfficialMirror != null && SelectedMirror == 1)
                 {
                     CurMirror = OfficialMirrorURL;
-                    CurMirrorHashCheck = OfficialMirrorHashCheck;
+                    CurMirrorHashCheck = (byte)(OfficialMirrorHashCheck == true ? 1 : 0);
                 }
                 else
                 {
@@ -230,7 +269,7 @@ namespace osu_download
                     CurMirrorHashCheck = MirrorCheckList[SelectedMirror];
                 }
                 Console.WriteLine("正在检查选定的分支...");
-                HttpWebRequest CheckRequest = WebRequest.Create(ServerURL + string.Format("?s={0}&v={1}", Version, CurDLClientVer)) as HttpWebRequest;
+                HttpWebRequest CheckRequest = SendRequest((CurMirrorHashCheck == 2 ? CurMirror : OfficialMirrorURL) + string.Format("?s={0}", Version));
                 CheckRequest.Timeout = 10000;
                 HttpWebResponse CheckWebResponse = CheckRequest.GetResponse() as HttpWebResponse;
                 string CheckResponse = new StreamReader(CheckWebResponse.GetResponseStream(), Encoding.UTF8).ReadToEnd();
@@ -277,8 +316,8 @@ namespace osu_download
                         }
                         Console.WriteLine(string.Format("正在" + isUpdate + "：{0}...", filearr[1]));
                         ClientWebClient wc = new ClientWebClient();
-                        wc.DownloadFile(CurMirror + (CurMirrorHashCheck ? uri : filearr[1]) + ((License != null) ? string.Format("?u={0}&h={1}",License[0],License[1]) : ""), filepath);
-                        if (MirrorCheckList[SelectedMirror] && filearr[0].ToLower() != GetFileHash(filepath))
+                        wc.DownloadFile(CurMirror + (CurMirrorHashCheck > 0 ? uri : filearr[1]) + ((License != null) ? string.Format("?u={0}&h={1}",License[0],License[1]) : ""), filepath);
+                        if (MirrorCheckList[SelectedMirror] > 0 && filearr[0].ToLower() != GetFileHash(filepath))
                         {
                             File.Delete(filepath);
                             Console.WriteLine(string.Format(isUpdate + "失败，文件不一致：{0}", filearr[1]));
@@ -312,6 +351,9 @@ namespace osu_download
                     }
                 }
                 Console.WriteLine("下载失败！" + ErrorMessage);
+#if DEBUG
+                Console.WriteLine(e.StackTrace);
+#endif
             }
             Console.WriteLine("请按任意键继续...");
             Console.ReadKey(true);
