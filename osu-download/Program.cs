@@ -352,7 +352,7 @@ namespace osu_download
                 }
                 Console.WriteLine("下载失败！" + ErrorMessage);
 #if DEBUG
-                Console.WriteLine(e.StackTrace);
+                Console.WriteLine(e.ToString());
 #endif
             }
             Console.WriteLine("请按任意键继续...");
