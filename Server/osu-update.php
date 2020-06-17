@@ -6,7 +6,7 @@ $officialNoticeList=array('[广告] BanYou 是国内领先的 osu! 第三方服�
 $mirrorList=array(
 	// MirrorURL|MirrorName|MirrorHashCheckFlag (Default: 0, mirror: 0,1,2/officialMirror: 0,1)|MirrorAD|MirrorHiddenFlag (Default: 0, for officialMirror)
 	"http://us-la.mirror.osu.pink/|官方 Mirror [美国/洛杉矶]|1||{$officialMirrorHiddenFlag}", // officialMirror
-	'https://txy1.sayobot.cn/client/|Sayo Mirror [中国/上海]|0|来自 osu.sayobot.cn 的 Mirror，仅支持 Latest，不支持防篡改及完整性校验'
+	'https://txy1.sayobot.cn/client/|Sayo Mirror [中国/上海]|0|来自 osu.sayobot.cn 的 Mirror，仅支持 Latest'
 );
 $payMirrorList=array();
 // oom: Only official mirror
