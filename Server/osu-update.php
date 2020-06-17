@@ -14,8 +14,8 @@ if (isset($_GET['oom']) && $_GET['oom'] == "1") {
 	die($mirrorList[0]);
 }
 if (isset($_SERVER['HTTP_USER_AGENT'])) {
-	$uaArr=explode('/',$_SERVER['HTTP_USER_AGENT'],1);
-	if (count($uaArr) === 2 && (ltrim($uaArr[1],'b') <= clientMinVersion)) {
+	$uaArr=explode('/',$_SERVER['HTTP_USER_AGENT'],2);
+	if (count($uaArr) === 2 && (ltrim($uaArr[1],'b') < clientMinVersion)) {
 		header('HTTP/1.1 503 Service Unavailable');
 		die('客户端版本太老！请前往 https://github.com/osupink/osu-download/releases/ 下载新版本。');
 	}
