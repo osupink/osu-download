@@ -15,8 +15,18 @@ namespace osu_download
     {
         static string Author = "asd";
         static string ProgramTitle = "osu! 镜像下载客户端";
-        static string ServerURL = "https://mirror.osu.pink/osu-update.php";
         static string CurDLClientVer = "b20200617.1";
+        static string ServerURL = "https://mirror.osu.pink/osu-update.php";
+        static string DefaultUserAgent = string.Format("osu-download/{0}", CurDLClientVer);
+        static bool isUnix = System.Environment.OSVersion.ToString().ToLower().Contains("unix");
+        static void Debug(string type, string msg, char dot = '.')
+        {
+#if DEBUG
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine(string.Format("[DEBUG] {0}: {1}{2}", type, msg, dot));
+            Console.ResetColor();
+#endif
+        }
         static string GetFileHash(string FilePath)
         {
             MD5CryptoServiceProvider hc = new MD5CryptoServiceProvider();
@@ -33,6 +43,7 @@ namespace osu_download
         }
         static short Ping(string Address)
         {
+            Debug("Ping", Address);
             try
             {
                 Ping ping = new Ping();
@@ -64,6 +75,7 @@ namespace osu_download
         }
         static void AddMirrorSplitWithoutConflict(ref SortedDictionary<short, List<string[]>> MirrorDictionary, short MirrorPing, string[] MirrorSplit)
         {
+            Debug("AddMirrorSplitWithoutConflict", string.Format("MirrorPing: {0}, MirrorSplit: {1}", MirrorPing, string.Join("|", MirrorSplit)));
             if (!MirrorDictionary.ContainsKey(MirrorPing))
             {
                 List<string[]> tmpList = new List<string[]>
@@ -79,8 +91,9 @@ namespace osu_download
         }
         static HttpWebRequest SendRequest(string URL, int Timeout = 10000)
         {
+            Debug("SendRequest", string.Format("URL: {0}, Timeout: {1}", URL, Timeout));
             HttpWebRequest wr = WebRequest.Create(URL) as HttpWebRequest;
-            wr.UserAgent = string.Format("osu-download/{0}", CurDLClientVer);
+            wr.UserAgent = DefaultUserAgent;
             wr.Timeout = Timeout;
             return wr;
         }
@@ -88,11 +101,11 @@ namespace osu_download
         {
             protected override WebRequest GetWebRequest(Uri address)
             {
-                WebRequest req = base.GetWebRequest(address);
-                if (req is HttpWebRequest)
-                {
-                    (req as HttpWebRequest).KeepAlive = false;
-                }
+                Debug("ClientWebClient", address.OriginalString);
+                HttpWebRequest req = base.GetWebRequest(address) as HttpWebRequest;
+                req.KeepAlive = false;
+                req.Timeout = 300000;
+                req.UserAgent = DefaultUserAgent;
                 return req;
             }
         }
@@ -101,11 +114,14 @@ namespace osu_download
         {
             string InstallPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "osu!");
             string[] License = null;
+            Debug("Main/ClientInfo", string.Format("isUnix: {0}, CurDLClientVer: {1}, ServerURL: {2}, DefaultUserAgent: {3}", isUnix.ToString(), CurDLClientVer, ServerURL, DefaultUserAgent));
             if (File.Exists("License"))
             {
+                Debug("Main", "License found", '!');
                 License = File.ReadAllText("License").Split(':');
                 if (License.Length != 2)
                 {
+                    Debug("Main", "License is invalid");
                     License = null;
                 }
             }
@@ -148,11 +164,18 @@ namespace osu_download
                     Version = "CuttingEdge";
                     break;
                 case 0:
-                    string SelectedDirPath = DialogDirPath().TrimEnd('\\', '/');
-                    if (!string.IsNullOrEmpty(SelectedDirPath))
+                    if (isUnix)
                     {
-                        InstallPath = SelectedDirPath;
-                        Console.WriteLine(string.Format("新的安装路径为：{0}", InstallPath));
+                        Console.WriteLine("Unix 下暂不支持选择路径，你可以在下载完成后通过默认路径来移动客户端。");
+                    }
+                    else
+                    {
+                        string SelectedDirPath = DialogDirPath().TrimEnd('\\', '/');
+                        if (!string.IsNullOrEmpty(SelectedDirPath))
+                        {
+                            InstallPath = SelectedDirPath;
+                            Console.WriteLine(string.Format("新的安装路径为：{0}", InstallPath));
+                        }
                     }
                     goto recheck;
                 default:
@@ -166,6 +189,7 @@ namespace osu_download
                 HttpWebResponse MirrorWebResponse = MirrorRequest.GetResponse() as HttpWebResponse;
                 string MirrorResponse = new StreamReader(MirrorWebResponse.GetResponseStream(), Encoding.UTF8).ReadToEnd();
                 MirrorWebResponse.Close();
+                Debug("Main/MirrorResponse", MirrorResponse);
                 string OfficialMirror = null;
                 SortedDictionary<short, List<string[]>> MirrorDictionary = new SortedDictionary<short, List<string[]>>();
                 string[] MirrorArrResponse = MirrorResponse.Split(Environment.NewLine.ToCharArray());
@@ -268,19 +292,22 @@ namespace osu_download
                     CurMirrorHashCheck = MirrorCheckList[SelectedMirror];
                 }
                 Console.WriteLine("正在检查选定的分支...");
-                HttpWebRequest CheckRequest = SendRequest((CurMirrorHashCheck == 2 ? CurMirror : OfficialMirrorURL) + string.Format("osu-stream.php?s={0}", Version));
-                CheckRequest.Timeout = 10000;
-                HttpWebResponse CheckWebResponse = CheckRequest.GetResponse() as HttpWebResponse;
-                string CheckResponse = new StreamReader(CheckWebResponse.GetResponseStream(), Encoding.UTF8).ReadToEnd();
-                CheckWebResponse.Close();
-                if (string.IsNullOrEmpty(CheckResponse))
+                string CheckMirror = CurMirrorHashCheck == 2 ? CurMirror : OfficialMirrorURL;
+                Debug("Main/SelectedMirror", string.Format("SelectedMirror: {0}, CheckMirror: {1}, CurMirrorHashCheck: {2}", SelectedMirror, CheckMirror, CurMirrorHashCheck));
+                HttpWebRequest StreamRequest = SendRequest(CheckMirror + string.Format("osu-stream.php?s={0}", Version));
+                StreamRequest.Timeout = 10000;
+                HttpWebResponse StreamWebResponse = StreamRequest.GetResponse() as HttpWebResponse;
+                string StreamResponse = new StreamReader(StreamWebResponse.GetResponseStream(), Encoding.UTF8).ReadToEnd();
+                StreamWebResponse.Close();
+                if (string.IsNullOrEmpty(StreamResponse))
                 {
                     throw new Exception("无法获取数据！");
                 }
+                Debug("Main/StreamResponse", StreamResponse);
                 Console.WriteLine("检查完毕！");
                 Stopwatch spendTime = new Stopwatch();
                 spendTime.Start();
-                string[] ArrResponse = CheckResponse.Split(Environment.NewLine.ToCharArray());
+                string[] ArrResponse = StreamResponse.Split(Environment.NewLine.ToCharArray());
                 foreach (string tmp in ArrResponse)
                 {
                     if (CurMirror != null && tmp.StartsWith("File:"))
@@ -302,24 +329,30 @@ namespace osu_download
                             File.WriteAllText(cfgpath, string.Format("_ReleaseStream = {0}\n", Version));
                         }
                         string isUpdate = "下载";
-                        string filepath = Path.Combine(InstallPath, filearr[1]);
-                        if (File.Exists(filepath))
+                        string FilePath = Path.Combine(InstallPath, filearr[1]);
+                        if (File.Exists(FilePath))
                         {
-                            if (GetFileHash(filepath) == filearr[0].ToLower())
+                            if (GetFileHash(FilePath) == filearr[0].ToLower())
                             {
                                 Console.WriteLine(string.Format("文件已存在且为最新版：{0}", filearr[1]));
                                 continue;
                             }
                             isUpdate = "更新";
-                            File.Delete(filepath);
+                            File.Delete(FilePath);
                         }
                         Console.WriteLine(string.Format("正在" + isUpdate + "：{0}...", filearr[1]));
                         ClientWebClient wc = new ClientWebClient();
-                        wc.DownloadFile(CurMirror + (CurMirrorHashCheck > 0 ? uri : filearr[1]) + ((License != null) ? string.Format("?u={0}&h={1}",License[0],License[1]) : ""), filepath);
-                        if (MirrorCheckList[SelectedMirror] > 0 && filearr[0].ToLower() != GetFileHash(filepath))
+                        wc.DownloadFile(CurMirror + (CurMirrorHashCheck > 0 ? uri : filearr[1]) + ((License != null) ? string.Format("?u={0}&h={1}",License[0],License[1]) : ""), FilePath);
+                        string ServerFileHash = filearr[0].ToLower();
+                        string ClientFileHash = GetFileHash(FilePath);
+                        if (MirrorCheckList[SelectedMirror] > 0)
                         {
-                            File.Delete(filepath);
-                            Console.WriteLine(string.Format(isUpdate + "失败，文件不一致：{0}", filearr[1]));
+                            Debug("Main/FileCheck", string.Format("ServerFileHash: {0}, ClientFileHash: {1}", ServerFileHash, ClientFileHash));
+                            if (ServerFileHash != ClientFileHash)
+                            {
+                                File.Delete(FilePath);
+                                Console.WriteLine(string.Format(isUpdate + "失败，文件不一致：{0}", filearr[1]));
+                            }
                         }
                         else
                         {
@@ -331,7 +364,7 @@ namespace osu_download
                 TimeSpan spendTimeSpan = spendTime.Elapsed;
                 string DoneText = "全部文件已下载/更新完成，耗时：" + string.Format("{0:00}:{1:00}:{2:00}",
             spendTimeSpan.Hours, spendTimeSpan.Minutes, spendTimeSpan.Seconds);
-                if (!System.Environment.OSVersion.ToString().ToLower().Contains("unix"))
+                if (!isUnix)
                 {
                     DoneText += "，将自动打开安装路径";
                     System.Diagnostics.Process.Start(InstallPath);
@@ -341,18 +374,13 @@ namespace osu_download
             }
             catch (Exception e)
             {
+                Debug("Main/Exception", e.ToString());
                 string ErrorMessage = e.Message;
-                if (e is WebException we)
+                if (e is WebException we && we.Status == WebExceptionStatus.ProtocolError)
                 {
-                    if (we.Status == WebExceptionStatus.ProtocolError)
-                    {
-                        ErrorMessage = "返回错误信息：" + new StreamReader((we.Response as HttpWebResponse).GetResponseStream(), Encoding.UTF8).ReadToEnd();
-                    }
+                    ErrorMessage = "返回错误信息：" + new StreamReader((we.Response as HttpWebResponse).GetResponseStream(), Encoding.UTF8).ReadToEnd();
                 }
                 Console.WriteLine("下载失败！" + ErrorMessage);
-#if DEBUG
-                Console.WriteLine(e.ToString());
-#endif
             }
             Console.WriteLine("请按任意键继续...");
             Console.ReadKey(true);
