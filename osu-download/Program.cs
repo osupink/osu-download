@@ -15,7 +15,7 @@ namespace osu_download
     {
         static string Author = "asd";
         static string ProgramTitle = "osu! 镜像下载客户端";
-        static string CurDLClientVer = "b20200617.2";
+        static string CurDLClientVer = "b20200626.1";
         static string ServerURL = "https://mirror.osu.pink/osu-update.php";
         static string DefaultUserAgent = string.Format("osu-download/{0}", CurDLClientVer);
         static bool isUnix = System.Environment.OSVersion.ToString().ToLower().Contains("unix");
@@ -330,9 +330,12 @@ namespace osu_download
                         }
                         string isUpdate = "下载";
                         string FilePath = Path.Combine(InstallPath, filearr[1]);
-                        if (File.Exists(FilePath))
+                        string ServerFileHash = filearr[0].ToLower();
+                        string ClientFileHash = File.Exists(FilePath) ? GetFileHash(FilePath) : null;
+                        if (!string.IsNullOrEmpty(ClientFileHash))
                         {
-                            if (GetFileHash(FilePath) == filearr[0].ToLower())
+                            Debug("Main/ExistFileCheck", string.Format("ServerFileHash: {0}, ClientFileHash: {1}", ServerFileHash, ClientFileHash));
+                            if (ServerFileHash == ClientFileHash)
                             {
                                 Console.WriteLine(string.Format("文件已存在且为最新版：{0}", filearr[1]));
                                 continue;
@@ -343,11 +346,10 @@ namespace osu_download
                         Console.WriteLine(string.Format("正在" + isUpdate + "：{0}...", filearr[1]));
                         ClientWebClient wc = new ClientWebClient();
                         wc.DownloadFile(CurMirror + (CurMirrorHashCheck > 0 ? uri : filearr[1]) + ((License != null) ? string.Format("?u={0}&h={1}",License[0],License[1]) : ""), FilePath);
-                        string ServerFileHash = filearr[0].ToLower();
-                        string ClientFileHash = GetFileHash(FilePath);
+                        ClientFileHash = GetFileHash(FilePath);
                         if (MirrorCheckList[SelectedMirror] > 0)
                         {
-                            Debug("Main/FileCheck", string.Format("ServerFileHash: {0}, ClientFileHash: {1}", ServerFileHash, ClientFileHash));
+                            Debug("Main/DownloadFileCheck", string.Format("ServerFileHash: {0}, ClientFileHash: {1}", ServerFileHash, ClientFileHash));
                             if (ServerFileHash != ClientFileHash)
                             {
                                 File.Delete(FilePath);
