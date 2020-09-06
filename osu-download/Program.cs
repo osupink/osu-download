@@ -377,12 +377,7 @@ namespace osu_download
             catch (Exception e)
             {
                 Debug("Main/Exception", e.ToString());
-                string ErrorMessage = e.Message;
-                if (e is WebException we && we.Status == WebExceptionStatus.ProtocolError)
-                {
-                    ErrorMessage = "返回错误信息：" + new StreamReader((we.Response as HttpWebResponse).GetResponseStream(), Encoding.UTF8).ReadToEnd();
-                }
-                Console.WriteLine("下载失败！" + ErrorMessage);
+                Console.WriteLine("下载失败！" + ((e is WebException we && we.Status == WebExceptionStatus.ProtocolError) ? ("返回错误信息：" + new StreamReader((we.Response as HttpWebResponse).GetResponseStream(), Encoding.UTF8).ReadToEnd()) : e.Message));
             }
             Console.WriteLine("请按任意键继续...");
             Console.ReadKey(true);
