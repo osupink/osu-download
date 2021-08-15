@@ -4,7 +4,7 @@ header('content-type:text/plain;charset=utf-8');
 $officialMirrorHiddenFlag=1;
 $officialNoticeList=array('[广告] BanYou 是国内领先的 osu! 第三方服务器，我们只针对长期玩家提供服务，注册十分简单，不仅可以单独游玩，还能邀请好友进行多人游戏，并且拥有独立的排名。立即加入我们的玩家群，群号：686469603');
 $mirrorList=array(
-	// MirrorURL|MirrorName|MirrorHashCheckFlag (Default: 0, mirror: 0,1,2/officialMirror: 0,1)|MirrorAD|MirrorHiddenFlag (Default: 0, for officialMirror)
+	// MirrorURL|MirrorName|MirrorHashCheckFlag (0: Not Check, 1: Official Mirror Check, 2: Mirror Check)|MirrorAD|MirrorHiddenFlag (0: Hide, 1: Display, 2: Display at top)
 	"http://us-la.mirror.osu.pink/|官方 Mirror [美国/洛杉矶]|1||{$officialMirrorHiddenFlag}", // officialMirror
 	'https://txy1.sayobot.cn/client/|Sayo Mirror [中国/上海]|0|来自 osu.sayobot.cn 的 Mirror，仅支持 Latest'
 );
