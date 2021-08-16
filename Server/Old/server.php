@@ -10,7 +10,6 @@ $stream='Stable40';
 $streamlist=array('Stable','Stable40','Beta40','CuttingEdge');
 $OfficialMirror="OfficialMirror:http://osu.acgvideo.cn/osu!/save/|官方 Mirror|BanYou 是国内领先的 osu! 第三方服务器，我们只针对长期玩家提供服务，注册十分简单，不仅可以单独游玩，还能邀请好友进行多人游戏，并且拥有独立的排名。立即加入我们的玩家群，群号：686469603\n";
 $MirrorList=array(
-//'https://osu.kj415j45.space/osu!/save/|屙屎汉化组镜像源|由 kj415j45 提供'
 );
 $PayMirrorList=array(
 'http://mirror.osupink.com/|官方付费 Mirror|欢迎您使用官方付费 Mirror'
