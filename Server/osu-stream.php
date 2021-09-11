@@ -8,7 +8,7 @@ if (isset($_GET['s'])) {
 	}
 }
 $checkFile=cacheDir."/requested-{$stream}";
-$jsonFile=cacheDir.'/'.filectime($checkFile)."/{$stream}.json";
+$jsonFile=cacheDir.'/'.filemtime($checkFile)."/{$stream}.json";
 if (!file_exists($checkFile) || !file_exists($jsonFile)) {
 	unlink($checkFile);
 	header('HTTP/1.1 503 Service Unavailable');
