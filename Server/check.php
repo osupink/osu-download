@@ -64,7 +64,7 @@ while (true) {
 		$isNotFound=!file_exists($checkFile);
 		if ($isChanged || $isNotFound) {
 			file_put_contents($checkFile, '1');
-			$fileTime=filectime($checkFile);
+			$fileTime=filemtime($checkFile);
 			if (!is_dir(cacheDir.'/'.$fileTime)) {
 				mkdir(cacheDir.'/'.$fileTime);
 			}
