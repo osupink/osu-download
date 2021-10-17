@@ -15,7 +15,7 @@ namespace osu_download
     {
         static string Author = "asd";
         static string ProgramTitle = "osu! 镜像下载客户端";
-        static string CurDLClientVer = "b20200626.1";
+        static string CurDLClientVer = "b20211017.1";
         static string ServerURL = "https://mirror.osu.pink/osu-update.php";
         static string DefaultUserAgent = string.Format("osu-download/{0}", CurDLClientVer);
         static bool isUnix = System.Environment.OSVersion.ToString().ToLower().Contains("unix");
@@ -181,7 +181,13 @@ namespace osu_download
                 default:
                     goto recheck;
             }
-            ServicePointManager.SecurityProtocol = (SecurityProtocolType)192 | (SecurityProtocolType)768 | (SecurityProtocolType)3072;
+            ServicePointManager.SecurityProtocol = (SecurityProtocolType)192;
+            try
+            {
+                ServicePointManager.SecurityProtocol |= (SecurityProtocolType)768;
+                ServicePointManager.SecurityProtocol |= (SecurityProtocolType)3072;
+                ServicePointManager.SecurityProtocol |= (SecurityProtocolType)12288;
+            } catch { }
             try
             {
                 Console.WriteLine("正在获取 Mirror...");
