@@ -15,7 +15,7 @@ namespace osu_download
     {
         static string Author = "asd";
         static string ProgramTitle = "osu! 镜像下载客户端";
-        static string CurDLClientVer = "b20211017.1";
+        static string CurDLClientVer = "b20211019.1";
         static string ServerURL = "https://mirror.osu.pink/osu-update.php";
         static string DefaultUserAgent = string.Format("osu-download/{0}", CurDLClientVer);
         static bool isUnix = System.Environment.OSVersion.ToString().ToLower().Contains("unix");
@@ -141,14 +141,36 @@ namespace osu_download
                 FIPSKey.Close();
                 RegLM.Close();
             } catch { }
-            byte VerNumber;
-            recheck:
-            Console.WriteLine("输入数字以选择路径或分支：");
-            Console.WriteLine("0 [选择路径]，1 [Latest(最新版)]，2 [Fallback(回退版)]，3 [Beta(测试版)]，4 [CuttingEdge(前沿版)]");
-            while (byte.TryParse(Console.ReadKey(true).KeyChar.ToString(), out VerNumber) != true)
+#if DEBUG
+            Console.WriteLine("Setting SSL Version...");
+#endif
+            ServicePointManager.SecurityProtocol = (SecurityProtocolType)192;
+#if DEBUG
+            Console.WriteLine("Enabled TLSv1...");
+#endif
+            try
             {
-                goto recheck;
+                ServicePointManager.SecurityProtocol |= (SecurityProtocolType)768;
+#if DEBUG
+                Console.WriteLine("Enabled TLSv1.1...");
+#endif
+                ServicePointManager.SecurityProtocol |= (SecurityProtocolType)3072;
+#if DEBUG
+                Console.WriteLine("Enabled TLSv1.2...");
+#endif
+                ServicePointManager.SecurityProtocol |= (SecurityProtocolType)12288;
+#if DEBUG
+                Console.WriteLine("Enabled TLSv1.3...");
+#endif
             }
+            catch { }
+            byte VerNumber;
+            ReCheck:
+            do
+            {
+                Console.WriteLine("输入数字以选择路径或分支：");
+                Console.WriteLine("0 [选择路径]，1 [Latest(最新版)]，2 [Fallback(回退版)]，3 [Beta(测试版)]，4 [CuttingEdge(前沿版)]");
+            } while (byte.TryParse(Console.ReadKey(true).KeyChar.ToString(), out VerNumber) != true);
             string Version = "Stable40";
             switch (VerNumber)
             {
@@ -177,17 +199,10 @@ namespace osu_download
                             Console.WriteLine(string.Format("新的安装路径为：{0}", InstallPath));
                         }
                     }
-                    goto recheck;
+                    goto ReCheck;
                 default:
-                    goto recheck;
+                    goto ReCheck;
             }
-            ServicePointManager.SecurityProtocol = (SecurityProtocolType)192;
-            try
-            {
-                ServicePointManager.SecurityProtocol |= (SecurityProtocolType)768;
-                ServicePointManager.SecurityProtocol |= (SecurityProtocolType)3072;
-                ServicePointManager.SecurityProtocol |= (SecurityProtocolType)12288;
-            } catch { }
             try
             {
                 Console.WriteLine("正在获取 Mirror...");
