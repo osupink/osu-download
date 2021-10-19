@@ -13,12 +13,12 @@ namespace osu_download
 {
     class Program
     {
-        static string Author = "asd";
-        static string ProgramTitle = "osu! 镜像下载客户端";
-        static string CurDLClientVer = "b20211019.1";
-        static string ServerURL = "https://mirror.osu.pink/osu-update.php";
-        static string DefaultUserAgent = string.Format("osu-download/{0}", CurDLClientVer);
-        static bool isUnix = System.Environment.OSVersion.ToString().ToLower().Contains("unix");
+        const string Author = "asd";
+        const string ProgramTitle = "osu! 镜像下载客户端";
+        const string CurDLClientVer = "b20211019.1";
+        const string ServerURL = "https://mirror.osu.pink/osu-update.php";
+        const string DefaultUserAgent = "osu-download/" + CurDLClientVer;
+        static readonly bool isUnix = Environment.OSVersion.ToString().ToLower().Contains("unix");
         static void Debug(string type, string msg, char dot = '.')
         {
 #if DEBUG
@@ -390,7 +390,7 @@ namespace osu_download
                 if (!isUnix)
                 {
                     DoneText += "，将自动打开安装路径";
-                    System.Diagnostics.Process.Start(InstallPath);
+                    Process.Start(InstallPath);
                 }
                 DoneText += "！";
                 Console.WriteLine(DoneText);
